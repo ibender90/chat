@@ -1,5 +1,4 @@
 package ru.gb.may_chat.client;
-
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
