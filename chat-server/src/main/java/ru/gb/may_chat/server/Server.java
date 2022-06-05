@@ -1,18 +1,18 @@
 package ru.gb.may_chat.server;
 
-import ru.gb.may_chat.server.model.User;
+import ru.gb.may_chat.server.error.UserNotFoundException;
 import ru.gb.may_chat.server.service.UserService;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static ru.gb.may_chat.constants.MessageConstants.REGEX;
-import static ru.gb.may_chat.enums.Command.BROADCAST_MESSAGE;
-import static ru.gb.may_chat.enums.Command.LIST_USERS;
+import static ru.gb.may_chat.enums.Command.*;
 
 public class Server {
     private static final int PORT = 8189;
@@ -53,7 +53,7 @@ public class Server {
     public UserService getUserService() {
         return userService;
     }
-    
+
     public synchronized boolean isUserAlreadyOnline(String nick) {
         for (Handler handler : handlers) {
             if (handler.getUser().equals(nick)) {
@@ -62,7 +62,7 @@ public class Server {
         }
         return false;
     }
-    
+
     public synchronized void addHandler(Handler handler) {
         this.handlers.add(handler);
         sendContacts();
@@ -78,13 +78,43 @@ public class Server {
     }
 
     private void sendContacts() {
-       String contacts = handlers.stream()
+        String contacts = handlers.stream()
                 .map(Handler::getUser)
                 .collect(Collectors.joining(REGEX));
-       String msg = LIST_USERS.getCommand() + REGEX + contacts;
+        String msg = LIST_USERS.getCommand() + REGEX + contacts;
 
         for (Handler handler : handlers) {
             handler.send(msg);
         }
     }
+
+    public void sendPrivateMessage(String from, String input) {
+        //private message начинается с адресата
+        String[] splitInput = input.split(REGEX);
+        System.out.println(Arrays.toString(splitInput));
+        String to = splitInput[1];
+        String message = splitInput[2];
+        System.out.println(to);
+        String messageShownToTarget = PRIVATE_MESSAGE.getCommand() + REGEX + from + " says: " + message;
+        String messageShownToSender = PRIVATE_MESSAGE.getCommand() + REGEX +  "You : " + message;
+        System.out.println(message);
+
+        findRecipient(to).send(messageShownToTarget);
+        findRecipient(from).send(messageShownToSender);
+
+    }
+
+    private Handler findRecipient(String nick)  {
+        for (Handler handler : handlers) {
+            System.out.println(handler.getUser());
+            if(handler.getUser().equals(nick)){
+                return handler;
+            }
+        } throw new UserNotFoundException("No such user on a server");
+    }
+
+
 }
+
+
+

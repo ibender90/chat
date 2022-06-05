@@ -6,6 +6,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+
+import static ru.gb.may_chat.constants.MessageConstants.REGEX;
 
 public class NetworkService {
     private static final String HOST = "127.0.0.1";
