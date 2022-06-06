@@ -1,6 +1,5 @@
 package ru.gb.may_chat.server;
 
-import ru.gb.may_chat.constants.MessageConstants;
 import ru.gb.may_chat.enums.Command;
 import ru.gb.may_chat.server.error.WrongCredentialsException;
 
@@ -12,9 +11,7 @@ import java.net.Socket;
 import static ru.gb.may_chat.constants.MessageConstants.REGEX;
 import static ru.gb.may_chat.enums.Command.AUTH_MESSAGE;
 import static ru.gb.may_chat.enums.Command.AUTH_OK;
-import static ru.gb.may_chat.enums.Command.BROADCAST_MESSAGE;
 import static ru.gb.may_chat.enums.Command.ERROR_MESSAGE;
-import static ru.gb.may_chat.enums.Command.PRIVATE_MESSAGE;
 
 public class Handler {
     private Socket socket;
@@ -23,6 +20,8 @@ public class Handler {
     private Thread handlerThread;
     private Server server;
     private String user;
+    int timer = 12;
+    boolean authorized = false;
 
     public Handler(Socket socket, Server server) {
         try {
@@ -38,7 +37,9 @@ public class Handler {
 
     public void handle() {
         handlerThread = new Thread(() -> {
-            authorize();
+            callTimerToAuthorize();
+            authorized = authorize();
+
             System.out.println("Auth done");
             while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
@@ -53,6 +54,37 @@ public class Handler {
         handlerThread.start();
     }
 
+    private void callTimerToAuthorize() {
+        Thread timeDaemon = new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+            }
+        });
+        timeDaemon.setDaemon(true);
+        timeDaemon.start();
+        while (true) {
+            try {
+                timeDaemon.sleep(1000);
+                if(authorized){
+                    timeDaemon.interrupt();
+                    break;
+                }
+                timer--;
+                if (timer == 0) {
+                    server.removeHandler(Handler.this);
+                }
+                System.out.println("tick-tack");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+
+
+    }
+
     private void parseMessage(String message) {
         String[] split = message.split(REGEX);
         Command command = Command.getByCommand(split[0]);
@@ -64,7 +96,7 @@ public class Handler {
         }
     }
 
-    private void authorize() {
+    private boolean authorize() {
         System.out.println("Authorizing");
 
         try {
@@ -80,11 +112,13 @@ public class Handler {
                     } catch (WrongCredentialsException e) {
                         response = ERROR_MESSAGE.getCommand() + REGEX + e.getMessage();
                         System.out.println("Wrong credentials: " + parsed[1]);
+                        return false;
                     }
                     
                     if (server.isUserAlreadyOnline(nickname)) {
                         response = ERROR_MESSAGE.getCommand() + REGEX + "This client already connected";
                         System.out.println("Already connected");
+                        return false;
                     }
                     
                     if (!response.equals("")) {
@@ -94,14 +128,16 @@ public class Handler {
                         this.user = nickname;
                         send(AUTH_OK.getCommand() + REGEX + nickname);
                         server.addHandler(this);
-                        break;
+                        return true;
                     }
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return false;
     }
+
 
     public void send(String msg) {
         try {
