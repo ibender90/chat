@@ -1,6 +1,5 @@
 package ru.gb.may_chat.server;
 
-import ru.gb.may_chat.constants.MessageConstants;
 import ru.gb.may_chat.enums.Command;
 import ru.gb.may_chat.server.error.WrongCredentialsException;
 
@@ -12,9 +11,7 @@ import java.net.Socket;
 import static ru.gb.may_chat.constants.MessageConstants.REGEX;
 import static ru.gb.may_chat.enums.Command.AUTH_MESSAGE;
 import static ru.gb.may_chat.enums.Command.AUTH_OK;
-import static ru.gb.may_chat.enums.Command.BROADCAST_MESSAGE;
 import static ru.gb.may_chat.enums.Command.ERROR_MESSAGE;
-import static ru.gb.may_chat.enums.Command.PRIVATE_MESSAGE;
 
 public class Handler {
     private Socket socket;
@@ -23,6 +20,8 @@ public class Handler {
     private Thread handlerThread;
     private Server server;
     private String user;
+    private  boolean authorized = false;
+    private int timer = 12;
 
     public Handler(Socket socket, Server server) {
         try {
@@ -37,6 +36,7 @@ public class Handler {
     }
 
     public void handle() {
+        callTimerToAuthorize();
         handlerThread = new Thread(() -> {
             authorize();
             System.out.println("Auth done");
@@ -53,6 +53,34 @@ public class Handler {
         handlerThread.start();
     }
 
+    private void callTimerToAuthorize() {
+
+        Thread timeDaemon = new Thread(()->{
+            while (!Thread.currentThread().isInterrupted()) {
+
+                try {
+                    Thread.sleep(1000);
+                    if (this.authorized) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                    this.timer--;
+                    if (this.timer == 0) {
+                        System.out.println("timeout, handler is dead");
+                        this.handlerThread.interrupt(); //? не сработало
+                        System.out.println(this.handlerThread.isInterrupted());
+                        break;
+                    }
+                    System.out.println("tick-tack");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        timeDaemon.setDaemon(true);
+        timeDaemon.start();
+    }
+
 
 
     private void parseMessage(String message) {
@@ -65,9 +93,9 @@ public class Handler {
             default -> System.out.println("Unknown message " + message);
         }
     }
-    //initial commit
 
-    private void authorize() {
+
+    private boolean authorize() {
         System.out.println("Authorizing");
 
         try {
@@ -97,13 +125,14 @@ public class Handler {
                         this.user = nickname;
                         send(AUTH_OK.getCommand() + REGEX + nickname);
                         server.addHandler(this);
-                        break;
+                        return true;
                     }
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return false;
     }
 
     public void send(String msg) {
