@@ -53,6 +53,8 @@ public class Handler {
         handlerThread.start();
     }
 
+
+
     private void parseMessage(String message) {
         String[] split = message.split(REGEX);
         Command command = Command.getByCommand(split[0]);
@@ -63,6 +65,7 @@ public class Handler {
             default -> System.out.println("Unknown message " + message);
         }
     }
+    //initial commit
 
     private void authorize() {
         System.out.println("Authorizing");
