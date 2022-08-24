@@ -7,6 +7,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.SQLException;
 
 import static ru.gb.may_chat.constants.MessageConstants.REGEX;
 import static ru.gb.may_chat.enums.Command.AUTH_MESSAGE;
@@ -111,8 +112,10 @@ public class Handler {
                     } catch (WrongCredentialsException e) {
                         response = ERROR_MESSAGE.getCommand() + REGEX + e.getMessage();
                         System.out.println("Wrong credentials: " + parsed[1]);
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
                     }
-                    
+
                     if (server.isUserAlreadyOnline(nickname)) {
                         response = ERROR_MESSAGE.getCommand() + REGEX + "This client already connected";
                         System.out.println("Already connected");
