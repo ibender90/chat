@@ -133,7 +133,7 @@ public class ChatController implements Initializable, MessageProcessor {
             case ERROR_MESSAGE -> showError(split[1]);
             case LIST_USERS -> parseUsers(split);
             default -> {
-                messageHistory.saveMessage(message);
+                messageHistory.saveMessage(split[1]);
                 chatArea.appendText(split[1] + System.lineSeparator());
             }
         }
@@ -150,7 +150,7 @@ public class ChatController implements Initializable, MessageProcessor {
         user = split[1];
         loginPanel.setVisible(false);
         mainPanel.setVisible(true);
-        //showMessageHistory();
+        showMessageHistory();
     }
 
     private void showMessageHistory(){
@@ -158,8 +158,7 @@ public class ChatController implements Initializable, MessageProcessor {
 
         for (String message :
              history) {
-            String[] split = message.split(REGEX);
-            chatArea.appendText(split[1] + System.lineSeparator());
+            chatArea.appendText(message + System.lineSeparator());
         }
     }
 
