@@ -23,6 +23,12 @@ public class MessageHistory {
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
+            if (countLines() > 100) {
+                int skip = countLines() - 100;
+                for (int i = 0; i < skip; i++) {
+                    reader.readLine(); //читаю строки но ничего не делаю с информацией
+                }
+            }
             while ((line = reader.readLine()) != null) {
                 messages.add(line);
             }
@@ -30,6 +36,21 @@ public class MessageHistory {
             e.printStackTrace();
         }
         return messages;
+    }
+
+    private int countLines() throws IOException {
+        LineNumberReader reader = null;
+        try {
+            reader = new LineNumberReader(new FileReader(filePath));
+            while ((reader.readLine()) != null);
+            return reader.getLineNumber();
+        } catch (Exception ex) {
+            return -1;
+        } finally {
+            if(reader != null)
+                reader.close();
+        }
+
     }
 
 }
