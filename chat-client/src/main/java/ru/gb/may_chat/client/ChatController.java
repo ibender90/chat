@@ -70,6 +70,8 @@ public class ChatController implements Initializable, MessageProcessor {
 
     private NetworkService networkService;
 
+    private MessageHistory messageHistory;
+
     private String user;
 
     public void mockAction(ActionEvent actionEvent) {
@@ -113,6 +115,7 @@ public class ChatController implements Initializable, MessageProcessor {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         networkService = new NetworkService(this);
+        messageHistory = new MessageHistory();
     }
 
     @Override
@@ -129,7 +132,10 @@ public class ChatController implements Initializable, MessageProcessor {
             case AUTH_OK -> authOk(split);
             case ERROR_MESSAGE -> showError(split[1]);
             case LIST_USERS -> parseUsers(split);
-            default -> chatArea.appendText(split[1] + System.lineSeparator());
+            default -> {
+                messageHistory.saveMessage(message);
+                chatArea.appendText(split[1] + System.lineSeparator());
+            }
         }
     }
 
@@ -144,6 +150,17 @@ public class ChatController implements Initializable, MessageProcessor {
         user = split[1];
         loginPanel.setVisible(false);
         mainPanel.setVisible(true);
+        //showMessageHistory();
+    }
+
+    private void showMessageHistory(){
+        List<String> history = messageHistory.getHistory();
+
+        for (String message :
+             history) {
+            String[] split = message.split(REGEX);
+            chatArea.appendText(split[1] + System.lineSeparator());
+        }
     }
 
     public void sendChangeNick(ActionEvent actionEvent) {
