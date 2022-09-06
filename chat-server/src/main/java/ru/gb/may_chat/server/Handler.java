@@ -22,7 +22,9 @@ public class Handler {
     private Server server;
     private String user;
     private  boolean authorized = false;
-    private int timer = 12;
+
+    private boolean threadIsInterrupted = false;
+    private int timeToAuthorize = 5;
 
     public Handler(Socket socket, Server server) {
         try {
@@ -40,7 +42,7 @@ public class Handler {
         callTimerToAuthorize();
         handlerThread = new Thread(() -> {
             authorize();
-            System.out.println("Auth done");
+            System.out.println("Auth process is finished");
             while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                 try {
                     String message = in.readUTF();
@@ -55,53 +57,47 @@ public class Handler {
     }
 
     private void callTimerToAuthorize() {
-
-        Thread timeDaemon = new Thread(()->{
-            while (!Thread.currentThread().isInterrupted()) {
-
-                try {
-                    Thread.sleep(1000);
-                    if (this.authorized) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                    this.timer--;
-                    if (this.timer == 0) {
-                        System.out.println("timeout, handler is dead");
-                        this.handlerThread.interrupt(); //? не сработало
-                        System.out.println(this.handlerThread.isInterrupted());
+        Thread timer = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("Timer started");
+                for (int i =0; i < timeToAuthorize; i ++) {
+                    if (authorized) {
                         break;
                     }
                     System.out.println("tick-tack");
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                System.out.println("Timeout");
+                send(ERROR_MESSAGE.getCommand() + REGEX + "Timeout");
+                try {
+                    killHandler();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
         });
-        timeDaemon.setDaemon(true);
-        timeDaemon.start();
+        timer.setDaemon(true);
+        timer.start();
     }
 
-
-
-    private void parseMessage(String message) {
-        String[] split = message.split(REGEX);
-        Command command = Command.getByCommand(split[0]);
-
-        switch (command) {
-            case BROADCAST_MESSAGE -> server.broadcast(user, split[1]);
-            case PRIVATE_MESSAGE -> server.sendPrivateMessage(user, message);
-            default -> System.out.println("Unknown message " + message);
-        }
+    private void killHandler() throws IOException {
+        handlerThread.interrupt();
+        threadIsInterrupted = true;
     }
 
-
-    private boolean authorize() {
+    private void authorize() {
         System.out.println("Authorizing");
 
         try {
-            while (!socket.isClosed()) {
+            while (!socket.isClosed() && !threadIsInterrupted) {
+
                 String msg = in.readUTF();
+
                 if (msg.startsWith(AUTH_MESSAGE.getCommand())) {
                     String[] parsed = msg.split(REGEX);
                     String response = "";
@@ -120,7 +116,7 @@ public class Handler {
                         response = ERROR_MESSAGE.getCommand() + REGEX + "This client already connected";
                         System.out.println("Already connected");
                     }
-                    
+
                     if (!response.equals("")) {
                         send(response);
                     } else {
@@ -128,14 +124,24 @@ public class Handler {
                         this.user = nickname;
                         send(AUTH_OK.getCommand() + REGEX + nickname);
                         server.addHandler(this);
-                        return true;
+                        this.authorized = true;
                     }
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return false;
+    }
+
+    private void parseMessage(String message) {
+        String[] split = message.split(REGEX);
+        Command command = Command.getByCommand(split[0]);
+
+        switch (command) {
+            case BROADCAST_MESSAGE -> server.broadcast(user, split[1]);
+            case PRIVATE_MESSAGE -> server.sendPrivateMessage(user, message);
+            default -> System.out.println("Unknown message " + message);
+        }
     }
 
     public void send(String msg) {

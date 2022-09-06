@@ -91,12 +91,10 @@ public class ChatController implements Initializable, MessageProcessor {
             String recipient = contacts.getSelectionModel().getSelectedItem();
             if (recipient.equals("ALL")) {
                 networkService.sendMessage(BROADCAST_MESSAGE.getCommand() + REGEX + text);
-            } else { //проверку на null джава отрицает, других сценариев я не вижу
-                //просто указываю, другую команду и говорю кому
+            } else {
                 networkService.sendMessage(PRIVATE_MESSAGE.getCommand() + REGEX
                         + recipient + REGEX + text);
             }
-            //@TODO private msgs
             inputField.clear();
         } catch (IOException e) {
             showError("Network error");
