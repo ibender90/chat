@@ -9,6 +9,9 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.stream.Collectors;
 
 import static ru.gb.may_chat.constants.MessageConstants.REGEX;
@@ -17,7 +20,7 @@ import static ru.gb.may_chat.enums.Command.*;
 public class Server {
     private static final int PORT = 8189;
     private List<Handler> handlers;
-
+    public ExecutorService executorService = Executors.newCachedThreadPool();
     private UserService userService;
 
     public Server(UserService userService) {
@@ -34,7 +37,8 @@ public class Server {
                 Socket socket = serverSocket.accept();
                 System.out.println("Client connected");
                 Handler handler = new Handler(socket, this);
-                handler.handle();
+                executorService.execute(handler.handle());
+                //handler.handle();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -75,6 +79,7 @@ public class Server {
 
     private void shutdown() {
         userService.stop();
+        executorService.shutdown();
     }
 
     private void sendContacts() {

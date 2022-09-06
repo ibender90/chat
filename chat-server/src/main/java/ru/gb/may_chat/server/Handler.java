@@ -18,13 +18,12 @@ public class Handler {
     private Socket socket;
     private DataOutputStream out;
     private DataInputStream in;
-    private Thread handlerThread;
+    private Runnable handlerThread;
     private Server server;
     private String user;
     private  boolean authorized = false;
-
     private boolean threadIsInterrupted = false;
-    private int timeToAuthorize = 5;
+    private int timeToAuthorize = 60;
 
     public Handler(Socket socket, Server server) {
         try {
@@ -38,22 +37,38 @@ public class Handler {
         }
     }
 
-    public void handle() {
-        callTimerToAuthorize();
-        handlerThread = new Thread(() -> {
-            authorize();
-            System.out.println("Auth process is finished");
-            while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
-                try {
-                    String message = in.readUTF();
-                    parseMessage(message);
-                } catch (IOException e) {
-                    System.out.println("Connection broken with client: " + user);
-                    server.removeHandler(this);
+    public Runnable handle() {
+        //callTimerToAuthorize();
+        handlerThread = new Runnable() {
+            @Override
+            public void run() {
+                authorize();
+                System.out.println("Auth process is finished");
+                while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
+                    try {
+                        String message = in.readUTF();
+                        parseMessage(message);
+                    } catch (IOException e) {
+                        System.out.println("Connection broken with client: " + user);
+                        server.removeHandler(Handler.this);
+                    }
                 }
             }
-        });
-        handlerThread.start();
+        };
+//            authorize();
+//            System.out.println("Auth process is finished");
+//            while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
+//                try {
+//                    String message = in.readUTF();
+//                    parseMessage(message);
+//                } catch (IOException e) {
+//                    System.out.println("Connection broken with client: " + user);
+//                    server.removeHandler(this);
+//                }
+//            }
+//        });
+        //handlerThread.start();
+        return handlerThread;
     }
 
     private void callTimerToAuthorize() {
@@ -86,7 +101,7 @@ public class Handler {
     }
 
     private void killHandler() throws IOException {
-        handlerThread.interrupt();
+        //handlerThread.interrupt();
         threadIsInterrupted = true;
     }
 
@@ -153,7 +168,7 @@ public class Handler {
     }
 
     public Thread getHandlerThread() {
-        return handlerThread;
+        return (Thread) handlerThread;
     }
 
     public String getUser() {
