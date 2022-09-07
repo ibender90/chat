@@ -20,7 +20,7 @@ import static ru.gb.may_chat.enums.Command.*;
 public class Server {
     private static final int PORT = 8189;
     private List<Handler> handlers;
-    public ExecutorService executorService = Executors.newCachedThreadPool();
+    protected static final ExecutorService executorService = Executors.newFixedThreadPool(4);
     private UserService userService;
 
     public Server(UserService userService) {
@@ -37,8 +37,7 @@ public class Server {
                 Socket socket = serverSocket.accept();
                 System.out.println("Client connected");
                 Handler handler = new Handler(socket, this);
-                executorService.execute(handler.handle());
-                //handler.handle();
+                handler.handle();
             }
         } catch (IOException e) {
             e.printStackTrace();

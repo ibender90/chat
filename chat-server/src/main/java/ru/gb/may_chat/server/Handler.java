@@ -37,9 +37,11 @@ public class Handler {
         }
     }
 
-    public Runnable handle() {
+    public void handle() {
         //callTimerToAuthorize();
-        handlerThread = new Runnable() {
+
+        //handlerThread = new Runnable() {
+        Server.executorService.execute(new Runnable() {
             @Override
             public void run() {
                 authorize();
@@ -54,21 +56,7 @@ public class Handler {
                     }
                 }
             }
-        };
-//            authorize();
-//            System.out.println("Auth process is finished");
-//            while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
-//                try {
-//                    String message = in.readUTF();
-//                    parseMessage(message);
-//                } catch (IOException e) {
-//                    System.out.println("Connection broken with client: " + user);
-//                    server.removeHandler(this);
-//                }
-//            }
-//        });
-        //handlerThread.start();
-        return handlerThread;
+        });
     }
 
     private void callTimerToAuthorize() {
