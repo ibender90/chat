@@ -1,5 +1,7 @@
 package ru.gb.may_chat.server;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ru.gb.may_chat.enums.Command;
 import ru.gb.may_chat.server.error.WrongCredentialsException;
 
@@ -25,15 +27,17 @@ public class Handler {
     private boolean threadIsInterrupted = false;
     private int timeToAuthorize = 60;
 
+    private static final Logger LOGGER = LogManager.getLogger(App.class);
+
     public Handler(Socket socket, Server server) {
         try {
             this.server = server;
             this.socket = socket;
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
-            System.out.println("Handler created");
+            LOGGER.info("Handler created");
         } catch (IOException e) {
-            System.err.println("Connection problems with user: " + user);
+            LOGGER.error("Connection problems with user: " + user);
         }
     }
 
@@ -45,13 +49,13 @@ public class Handler {
             @Override
             public void run() {
                 authorize();
-                System.out.println("Auth process is finished");
+                LOGGER.info("Auth process is finished");
                 while (!Thread.currentThread().isInterrupted() && !socket.isClosed()) {
                     try {
                         String message = in.readUTF();
                         parseMessage(message);
                     } catch (IOException e) {
-                        System.out.println("Connection broken with client: " + user);
+                        LOGGER.error("Connection broken with client: " + user);
                         server.removeHandler(Handler.this);
                     }
                 }
@@ -59,7 +63,9 @@ public class Handler {
         });
     }
 
+
     private void callTimerToAuthorize() {
+
         Thread timer = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -94,7 +100,7 @@ public class Handler {
     }
 
     private void authorize() {
-        System.out.println("Authorizing");
+        LOGGER.info("Authorizing user");
 
         try {
             while (!socket.isClosed()) {
@@ -117,13 +123,13 @@ public class Handler {
 
                     if (server.isUserAlreadyOnline(nickname)) {
                         response = ERROR_MESSAGE.getCommand() + REGEX + "This client already connected";
-                        System.out.println("Already connected");
+                        LOGGER.info("Already connected");
                     }
 
                     if (!response.equals("")) {
                         send(response);
                     } else {
-                        System.out.println("Auth ok");
+                        LOGGER.info("User is authorized");
                         this.user = nickname;
                         send(AUTH_OK.getCommand() + REGEX + nickname);
                         server.addHandler(this);
@@ -144,7 +150,7 @@ public class Handler {
         switch (command) {
             case BROADCAST_MESSAGE -> server.broadcast(user, split[1]);
             case PRIVATE_MESSAGE -> server.sendPrivateMessage(user, message);
-            default -> System.out.println("Unknown message " + message);
+            default -> LOGGER.error("Unknown message " + message);
         }
     }
 

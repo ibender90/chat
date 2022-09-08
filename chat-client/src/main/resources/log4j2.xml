@@ -4,7 +4,7 @@
         <Property name="basePath">logs</Property>
     </Properties>
     <Appenders>
-        <File name="FILE" fileName="${basePath}/logfileServer.log" append="true">
+        <File name="FILE" fileName="${basePath}/logfileClient.log" append="true">
             <PatternLayout pattern="%-5p %d{yyyy-MM-dd HH:mm:ss} [%t] %C (%F:%L) -
 %m%n" />
         </File>

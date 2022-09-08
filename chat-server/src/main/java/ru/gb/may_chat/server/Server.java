@@ -24,6 +24,7 @@ public class Server {
     private List<Handler> handlers;
     protected static final ExecutorService executorService = Executors.newFixedThreadPool(4);
     private UserService userService;
+    private static final Logger LOGGER = LogManager.getLogger(App.class);
 
 
     public Server(UserService userService) {
@@ -33,12 +34,12 @@ public class Server {
 
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            System.out.println("Server start!");
+            LOGGER.info("SERVER STARTED");
             userService.start();
             while (true) {
-                System.out.println("Waiting for connection......");
+                LOGGER.info("Server is waiting for connection");
                 Socket socket = serverSocket.accept();
-                System.out.println("Client connected");
+                LOGGER.info("Client connected to server");
                 Handler handler = new Handler(socket, this);
                 handler.handle();
             }

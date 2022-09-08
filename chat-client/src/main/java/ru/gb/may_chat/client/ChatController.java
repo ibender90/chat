@@ -1,5 +1,6 @@
 package ru.gb.may_chat.client;
 
+
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -14,6 +15,8 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ru.gb.may_chat.client.net.MessageProcessor;
 import ru.gb.may_chat.client.net.NetworkService;
 import ru.gb.may_chat.enums.Command;
@@ -29,6 +32,8 @@ import static ru.gb.may_chat.constants.MessageConstants.REGEX;
 import static ru.gb.may_chat.enums.Command.*;
 
 public class ChatController implements Initializable, MessageProcessor {
+
+    private static final Logger LOGGER = LogManager.getLogger(ChatController.class);
 
     @FXML
     private VBox changeNickPanel;
@@ -118,7 +123,7 @@ public class ChatController implements Initializable, MessageProcessor {
 
     @Override
     public void processMessage(String message) {
-        System.out.println("processing message");
+        LOGGER.info("Chat controller is processing incoming message");
         Platform.runLater(() -> parseMessage(message));
     }
 
@@ -144,7 +149,7 @@ public class ChatController implements Initializable, MessageProcessor {
     }
 
     private void authOk(String[] split) {
-        System.out.println("Auth ok");
+        LOGGER.info("Client authorized");
         user = split[1];
         loginPanel.setVisible(false);
         mainPanel.setVisible(true);
@@ -189,4 +194,5 @@ public class ChatController implements Initializable, MessageProcessor {
             showError("Network error");
         }
     }
+
 }

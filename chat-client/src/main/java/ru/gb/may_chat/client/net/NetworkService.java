@@ -1,5 +1,8 @@
 package ru.gb.may_chat.client.net;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -19,6 +22,7 @@ public class NetworkService {
     private Socket socket;
     private Thread clientThread;
     private final MessageProcessor messageProcessor;
+    private static final Logger LOGGER = LogManager.getLogger(NetworkService.class);
 
     public NetworkService(MessageProcessor messageProcessor) {
         this.messageProcessor = messageProcessor;
@@ -36,7 +40,7 @@ public class NetworkService {
             try {
                 while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
                     String income = in.readUTF();
-                    System.out.println("Got income message");
+                    LOGGER.info("Message processor received a message");
                     messageProcessor.processMessage(income);
                 }
             } catch (IOException e) {
@@ -67,7 +71,7 @@ public class NetworkService {
         if (socket != null && !socket.isClosed()) {
             socket.close();
         }
-        System.out.println("Client stopped");
+        LOGGER.info("Client stopped");
     }
 
 }
