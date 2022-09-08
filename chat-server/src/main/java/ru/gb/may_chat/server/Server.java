@@ -1,5 +1,7 @@
 package ru.gb.may_chat.server;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ru.gb.may_chat.server.error.UserNotFoundException;
 import ru.gb.may_chat.server.service.UserService;
 
@@ -22,6 +24,7 @@ public class Server {
     private List<Handler> handlers;
     protected static final ExecutorService executorService = Executors.newFixedThreadPool(4);
     private UserService userService;
+
 
     public Server(UserService userService) {
         this.userService = userService;

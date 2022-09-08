@@ -97,7 +97,7 @@ public class InDBUserServiceImpl implements UserService {
     }
 
     private static void disconnect() throws SQLException {
-        //connection.close();
+        connection.close();
 
     }
 }

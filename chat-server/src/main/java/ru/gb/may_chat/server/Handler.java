@@ -97,7 +97,7 @@ public class Handler {
         System.out.println("Authorizing");
 
         try {
-            while (!socket.isClosed() && !threadIsInterrupted) {
+            while (!socket.isClosed()) {
 
                 String msg = in.readUTF();
 
@@ -128,6 +128,7 @@ public class Handler {
                         send(AUTH_OK.getCommand() + REGEX + nickname);
                         server.addHandler(this);
                         this.authorized = true;
+                        return;
                     }
                 }
             }
